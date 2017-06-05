@@ -1,0 +1,64 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.2.5.RELEASE")
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'groovy'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+apply plugin: 'spring-boot'
+apply plugin: 'jetty'
+
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+
+    def spring_boot_version = "1.4.0.RELEASE"
+
+    compile 'org.codehaus.groovy:groovy-all:2.4.4'
+    compile("org.springframework.boot:spring-boot-starter-web:$spring_boot_version") {
+        exclude module: "spring-boot-starter-tomcat"
+    }
+    compile "org.springframework.boot:spring-boot-starter-jetty:$spring_boot_version"
+
+    // db stuff
+    compile "org.springframework.boot:spring-boot-starter-data-jpa:$spring_boot_version"
+    runtime "com.h2database:h2"
+    runtime "org.apache.tomcat:el-api:6.0.48"
+
+    compile 'joda-time:joda-time:2.7'
+    compile 'org.slf4j:jcl-over-slf4j:1.7.12'
+    compile group: 'org.json', name: 'json', version: '20160810'
+
+    testCompile 'junit:junit:4.10'
+
+    testCompile 'org.mockito:mockito-core:1.10.19'
+//    testCompile(group: 'org.powermock', name: 'powermock-core', version: '1.6.1')
+//    testCompile(group: 'org.powermock', name: 'powermock-mockito', version: '1.6.1', classifier: 'full')
+    testCompile group: 'org.mockito', name: 'mockito-all', version: '1.9.5'
+    testCompile "org.powermock:powermock-mockito-release-full:1.6.1"
+
+    testCompile "org.springframework.boot:spring-boot-starter-test:$spring_boot_version"
+
+}
+
+// allow groovy compiler to compile everything (including java). solves java dependency on groovy classes
+sourceSets.main.java.srcDirs = []
+sourceSets.main.groovy.srcDirs += ["src/main/java"]
+
+
+mainClassName = 'com.isobar.sample.action.server.ServerApplication'
+
+bootRepackage {
+    mainClass = mainClassName
+}

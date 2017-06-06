@@ -50,26 +50,29 @@ class AnswerService {
         def richResponse = [items:
                                     [[simple_response: [
                                             text_to_speech: response + ' assistant']
-
-//                                      basic_cardd    : [
-//                                              image: [
-//                                                      url               : "http://rathankalluri.com/tr-in/agents/tr-1024.jpg",
-//                                                      accessibility_text: 'sample image'
-//                                              ]
-//                                      ]
-                                     ]]
+                                     ],
+                                     [basic_card: [
+                                             image: [
+                                                     url               : "http://rathankalluri.com/tr-in/agents/tr-1024.jpg",
+                                                     accessibility_text: 'sample image'
+                                             ]
+                                     ]
+                                     ]
+                                    ]
         ]
 
         // according to https://developers.google.com/actions/reference/v1/apiai-webhook
-        def googleAssistantData = [expect_user_response: true,
-                                   rich_response       : richResponse
+        def googleAssistantData = [
+                rich_response: richResponse
         ]
 
         JSONObject responseObject = [speech     : response,
                                      displayText: response,
-                                     data       : [slack : [text       : response + 'slack',
-                                                            attachments: slackButtons],
-                                                   google: googleAssistantData],
+                                     data       : [
+                                             slack : [
+                                                     text       : response + ' slack',
+                                                     attachments: slackButtons],
+                                             google: googleAssistantData],
 
         ]
 

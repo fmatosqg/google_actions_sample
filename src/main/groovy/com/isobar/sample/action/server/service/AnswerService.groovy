@@ -47,21 +47,31 @@ class AnswerService {
                         ]
                 ]
 
-        def richResponse = [items:
+        // basic card defined here: https://developers.google.com/actions/reference/rest/Shared.Types/AppResponse#BasicCard
+        def richResponse = [items      :
                                     [[simple_response: [
                                             text_to_speech: response + ' assistant']
                                      ],
                                      [basic_card: [
-                                             image: [
+                                             image  : [
                                                      url               : "http://rathankalluri.com/tr-in/agents/tr-1024.jpg",
                                                      accessibility_text: 'sample image'
+                                             ],
+                                             buttons: [
+                                                     [title          : 'click me',
+                                                      open_url_action: [
+                                                              url: 'https://www.cnn.com'
+                                                      ]]
                                              ]
                                      ]
                                      ]
-                                    ]
+                                    ],
+                            suggestions: [
+                                    [title: '1 second'],
+                                    [title: '2 seconds']
+                            ]
         ]
 
-        // according to https://developers.google.com/actions/reference/v1/apiai-webhook
         def googleAssistantData = [
                 rich_response: richResponse
         ]
@@ -72,7 +82,7 @@ class AnswerService {
                                              slack : [
                                                      text       : response + ' slack',
                                                      attachments: slackButtons],
-                                             google: googleAssistantData],
+                                             google: googleAssistantData]
 
         ]
 

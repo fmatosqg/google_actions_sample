@@ -19,7 +19,12 @@ class ActionRequest {
         String action
         Float score
         Boolean actionIncomplete
-        Map<String, String> parameters
-//        List<Object> fulfillment
+        def parameters
+        Fulfillment fulfillment
+    }
+
+    @ToString
+    static class Fulfillment {
+        String speech
     }
 }

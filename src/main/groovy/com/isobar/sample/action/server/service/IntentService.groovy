@@ -15,9 +15,9 @@ class IntentService extends AnswerService {
 
     final Logger LOGGER = LoggerFactory.getLogger(AnswerService)
 
-    JSONObject intentAnimals(Map params) {
+    JSONObject intentAnimals(def params) {
 
-        String val = params.any
+        String val = params['any']
 
         if (val) {
             return answer("Hmm, a $val person.")
@@ -26,9 +26,9 @@ class IntentService extends AnswerService {
         }
     }
 
-    JSONObject intentHello(Map params) {
+    JSONObject intentHello(def params) {
 
-        String val = params.any
+        String val = params['any']
 
         if (val) {
             LOGGER.info("Param is $val")

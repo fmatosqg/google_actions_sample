@@ -5,6 +5,7 @@ import com.isobar.sample.action.server.service.AnswerService
 import com.isobar.sample.action.server.service.timesheet.model.TimesheetEntry
 import com.isobar.sample.action.server.service.timesheet.model.TimesheetRepository
 import groovy.transform.CompileStatic
+import org.joda.time.DateTime
 import org.json.JSONObject
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -30,43 +31,75 @@ class TimesheetService extends AnswerService {
 
     JSONObject stats(ActionRequest input) {
 
-        TimesheetEntry entry = timesheetRepository.findByUser(input?.sessionId)
+        List<TimesheetEntry> entries = timesheetRepository.findByUser(input?.sessionId)
 
-        LOGGER.info("Entry $entry")
+        LOGGER.info("Entry $entries")
 
-        answer('stats empty')
+        String response = entries
+                .findAll { entry -> entry.task }
+                .collect { entry -> "$entry.task - $entry.accumulatedTime seconds" }
+                .join(',\n')
+
+        answer("stats $response")
     }
 
     JSONObject start(ActionRequest input) {
 
+        checkForActiveTask(input)
+
+        if (input.result.actionIncomplete) {
+            return answer(input.result.fulfillment.speech)
+        }
+
         String session = input?.sessionId
+        String taskName = input.result.parameters['task']
 
-        LOGGER.info("User is $session")
+        LOGGER.info("User is $session, params are ${input.result.parameters}")
 
-        TimesheetEntry entry = timesheetRepository.findByUser(session)
+        TimesheetEntry startedEntry = timesheetRepository.findByUserAndTask(session, taskName)
 
-        if (!entry) {
-            entry = new TimesheetEntry(user: session, time: 0)
+        if (!startedEntry) {
+            startedEntry = new TimesheetEntry(user: session, task: taskName, accumulatedTime: 0L, startTime: 0L)
         }
 
-        if (!entry.time) {
-            entry.time = 0
-        }
+        startedEntry.active = true
+        startedEntry.startTime = DateTime.now().getMillis()
 
-        entry.time++
+        LOGGER.info("Entry $startedEntry")
+        timesheetRepository.save(startedEntry)
 
-        LOGGER.info("Entry $entry")
-
-        timesheetRepository.save(entry)
-
-        return answer("Count = $entry.time")
+        return answer("Adding time under '$taskName'. Accumulated $startedEntry.accumulatedTime seconds so far.")
 
     }
 
+    TimesheetEntry checkForActiveTask(ActionRequest actionRequest) {
+
+
+        TimesheetEntry activeTask = timesheetRepository.findByActive(true)
+        if (activeTask) {
+            LOGGER.info("Found active task $activeTask")
+
+            activeTask.active = false
+            long timeElapsed = DateTime.now().getMillis() - activeTask.startTime
+            timeElapsed /= 1000L
+            activeTask.accumulatedTime += timeElapsed
+
+            timesheetRepository.save(activeTask)
+
+            return activeTask
+        }
+    }
 
     JSONObject stop(ActionRequest input) {
 
-        return answer('stop')
+        TimesheetEntry entry = checkForActiveTask(input)
+
+        if ( entry ) {
+            return answer("Stop recording on $entry.task")
+        } else {
+            return answer("Already was stopped")
+        }
+
     }
 
 }

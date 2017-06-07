@@ -257,5 +257,5 @@ reports/
 # ignore server scraping and other temporary resources
 tmp
 nohup.out
-testh2.mv.db
+*.db
 *.trace.db

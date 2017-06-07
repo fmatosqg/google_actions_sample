@@ -2,11 +2,11 @@ package com.isobar.sample.action.server.service.timesheet.model
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import groovy.transform.CompileStatic
+import groovy.transform.ToString
 
 import javax.persistence.Entity
 import javax.persistence.GeneratedValue
 import javax.persistence.Id
-import javax.persistence.Index
 
 /**
  * Created by fabio.goncalves on 7/06/2017.
@@ -14,6 +14,7 @@ import javax.persistence.Index
 @Entity
 @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
 @CompileStatic
+@ToString
 class TimesheetEntry {
 
     @Id
@@ -23,16 +24,8 @@ class TimesheetEntry {
     String user
 
     String task
-    Integer time
+    Long accumulatedTime
+    Long startTime
+    Boolean active
 
-
-    @Override
-    public String toString() {
-        return "TimesheetEntry{" +
-                "id=" + id +
-                ", user='" + user + '\'' +
-                ", task='" + task + '\'' +
-                ", time=" + time +
-                '}';
-    }
 }

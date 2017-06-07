@@ -89,4 +89,59 @@ class AnswerService {
         LOGGER.info("Response  " + responseObject)
         return responseObject
     }
+
+    protected JSONObject answerWithSuggestions(String text, String userId, List suggestions) {
+
+
+        def ff = suggestions
+                .collect { s -> [title: s] }
+
+        def richResponse = [items      :
+                                    [[simple_response: [
+                                            text_to_speech: text]
+                                     ]
+                                    ],
+                            suggestions: ff
+        ]
+
+
+        def googleAssistantData = [
+                rich_response: richResponse
+        ]
+
+        ////
+
+        def slackActionss = [
+                [name : 'n',
+                 text : 'a',
+                 type : 'button',
+                 value: 'a'],
+                [name : 'n',
+                 text : 'b',
+                 type : 'button',
+                 value: 'b']
+        ]
+
+        def slackActions = suggestions
+                .collect { s -> [name: 'n', text: s, type: 'button', value: s] }
+
+        def slackButtons =
+                [
+                        [text       : "Suggestions:",
+                         actions    : slackActions,
+                         callback_id: userId
+                        ]
+
+                ]
+
+        def slackData = [
+                text       : text,
+                attachments: slackButtons]
+
+        JSONObject responseObject = [speech: text,
+                                     data  : [
+                                             slack : slackData,
+                                             google: googleAssistantData]
+        ]
+    }
 }

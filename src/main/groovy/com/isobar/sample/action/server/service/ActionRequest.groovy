@@ -11,7 +11,7 @@ import groovy.transform.ToString
 class ActionRequest {
 
     String sessionId
-
+    OriginalRequest originalRequest
     Result result
 
     @ToString
@@ -26,5 +26,23 @@ class ActionRequest {
     @ToString
     static class Fulfillment {
         String speech
+    }
+
+    @ToString
+    static class OriginalRequest {
+        String source
+        Data data
+    }
+
+    @ToString
+    static class Data {
+        User user
+    }
+
+    @ToString
+    static class User {
+        String userId
+        String locale
+
     }
 }

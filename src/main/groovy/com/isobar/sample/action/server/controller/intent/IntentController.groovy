@@ -7,6 +7,8 @@ import com.isobar.sample.action.server.service.ActionRequest
 import com.isobar.sample.action.server.service.DelayService
 import com.isobar.sample.action.server.service.IntentService
 import com.isobar.sample.action.server.service.timesheet.TimesheetService
+import com.isobar.sample.action.server.service.timesheet.model.TimesheetEntry
+import groovy.json.JsonSlurper
 import groovy.transform.CompileStatic
 import org.json.JSONObject
 import org.slf4j.Logger
@@ -46,7 +48,7 @@ class IntentController {
 
     @RequestMapping(value = "intent", method = RequestMethod.POST, produces = "application/json")
     @ResponseBody
-    String helloPost(@RequestBody String body) {
+    String apiaiPost(@RequestBody String body) {
 
         ObjectMapper objectMapper = new ObjectMapper()
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -73,6 +75,9 @@ class IntentController {
             case 'hello':
                 result = intentService.intentHello(actionRequest.result.parameters)
                 break
+            case 'help':
+                result = intentService.help()
+                break
             case 'test':
                 result = intentService.test('test')
                 break
@@ -92,6 +97,39 @@ class IntentController {
 
         return result as String
 
+    }
+
+    /**
+     * This will receive invocations from slack app when user presses buttons
+     * @param body
+     * @return
+     */
+    @RequestMapping(value = "slack", method = RequestMethod.POST, produces = "application/json")
+    @ResponseBody
+    String slackInteractiveMessages(@RequestBody String encodedBody) {
+
+        def strBody = URLDecoder.decode(encodedBody, "UTF-8")
+
+        def body = new JsonSlurper().parseText(strBody.replace("payload=", ''))
+        LOGGER.info("Slack button $body")
+
+        String userId = body['callback_id']
+        List actions = body['actions'] as List
+        String action = actions[0]['value']
+
+        if (action == 'stats') {
+            return timesheetService.stats(userId)
+        } else if (action == 'stop') {
+            TimesheetEntry entry = timesheetService.stopActiveTask(userId)
+            if (entry) {
+                return "Stopping task $entry.task"
+            } else {
+                return "Task already stopped"
+            }
+        } else {
+            TimesheetEntry entry = timesheetService.startTask(userId, action)
+            return "Start task $entry.task"
+        }
     }
 
 

@@ -1,0 +1,97 @@
+{
+  "originalRequest": {
+    "source": "google",
+    "version": "2",
+    "data": {
+      "isInSandbox": true,
+      "surface": {
+        "capabilities": [
+          {
+            "name": "actions.capability.AUDIO_OUTPUT"
+          },
+          {
+            "name": "actions.capability.SCREEN_OUTPUT"
+          }
+        ]
+      },
+      "inputs": [
+        {
+          "rawInputs": [
+            {
+              "query": "stats",
+              "inputType": "KEYBOARD"
+            }
+          ],
+          "arguments": [
+            {
+              "rawText": "stats",
+              "textValue": "stats",
+              "name": "text"
+            }
+          ],
+          "intent": "actions.intent.TEXT"
+        }
+      ],
+      "user": {
+        "locale": "en-US",
+        "userId": "APhe68FZaWuQ46eiiW35CWSvgWH1"
+      },
+      "device": {},
+      "conversation": {
+        "conversationId": "1496817224770",
+        "type": "ACTIVE",
+        "conversationToken": "[]"
+      }
+    }
+  },
+  "id": "990be43d-fd06-4255-9e2f-27d8baa34a99",
+  "timestamp": "2017-06-07T06:33:51.115Z",
+  "lang": "en",
+  "result": {
+    "source": "agent",
+    "resolvedQuery": "stats",
+    "speech": "",
+    "action": "timesheet.stats",
+    "actionIncomplete": false,
+    "parameters": {},
+    "contexts": [
+      {
+        "name": "actions_capability_screen_output",
+        "parameters": {},
+        "lifespan": 0
+      },
+      {
+        "name": "actions_capability_audio_output",
+        "parameters": {},
+        "lifespan": 0
+      },
+      {
+        "name": "google_assistant_input_type_keyboard",
+        "parameters": {},
+        "lifespan": 0
+      }
+    ],
+    "metadata": {
+      "intentId": "182f38a1-4da0-4122-93e5-830af4b682ca",
+      "webhookUsed": "true",
+      "webhookForSlotFillingUsed": "false",
+      "nluResponseTime": 5,
+      "intentName": "Timesheet stats"
+    },
+    "fulfillment": {
+      "speech": "",
+      "messages": [
+        {
+          "type": 0,
+          "speech": ""
+        }
+      ]
+    },
+    "score": 1.0
+  },
+  "status": {
+    "code": 200,
+    "errorType": "success"
+  },
+  "sessionId": "1496817224770"
+}

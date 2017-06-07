@@ -41,4 +41,10 @@ class IntentService extends AnswerService {
     JSONObject test(String s) {
         return answer(s)
     }
+
+    JSONObject help() {
+
+        return answerWithSuggestions("Suggestions","demouser",["demo","start","stats"])
+
+    }
 }

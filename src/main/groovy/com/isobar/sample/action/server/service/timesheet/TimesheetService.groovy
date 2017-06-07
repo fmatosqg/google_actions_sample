@@ -10,6 +10,7 @@ import org.json.JSONObject
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.dao.IncorrectResultSizeDataAccessException
 import org.springframework.stereotype.Service
 
 /**
@@ -31,57 +32,111 @@ class TimesheetService extends AnswerService {
 
     JSONObject stats(ActionRequest input) {
 
-        List<TimesheetEntry> entries = timesheetRepository.findByUser(input?.sessionId)
+        String userId = getUserId(input)
 
-        LOGGER.info("Entry $entries")
+        String response = stats(userId)
 
-        String response = entries
-                .findAll { entry -> entry.task }
-                .collect { entry -> "$entry.task - $entry.accumulatedTime seconds" }
-                .join(',\n')
+        answerWithSuggestions("stats $response", userId, ["start", "stats", "stop"])
+    }
 
-        answer("stats $response")
+
+    String getUserId(ActionRequest actionRequest) {
+
+        String userId
+
+        if (!actionRequest.originalRequest) {
+            userId = "empty source + ${actionRequest.sessionId}"
+
+        } else if (actionRequest.originalRequest.source == 'google') {
+            userId = actionRequest.originalRequest.data.user.userId
+        } else {
+            userId = "${actionRequest.originalRequest.source} + ${actionRequest.sessionId}"
+        }
+
+        return userId
     }
 
     JSONObject start(ActionRequest input) {
 
-        checkForActiveTask(input)
+        String userId = getUserId(input)
 
         if (input.result.actionIncomplete) {
-            return answer(input.result.fulfillment.speech)
+
+            List suggestions = timesheetRepository.findByUser(userId)
+                    .sort { 0-it.startTime }
+                    .collect { it.task }
+            return answerWithSuggestions(input.result.fulfillment.speech, userId, suggestions)
         }
 
-        String session = input?.sessionId
         String taskName = input.result.parameters['task']
 
-        LOGGER.info("User is $session, params are ${input.result.parameters}")
+        stopActiveTask(userId)
 
-        TimesheetEntry startedEntry = timesheetRepository.findByUserAndTask(session, taskName)
+
+        LOGGER.info("User is $userId, params are ${input.result.parameters}")
+
+        TimesheetEntry startedEntry = startTask(userId, taskName)
+        LOGGER.info("Entry $startedEntry")
+
+
+        return answerWithSuggestions("Adding time under '$taskName'. Accumulated $startedEntry.accumulatedTime seconds so far.", userId, ["stats", "stop"])
+
+    }
+
+    JSONObject stop(ActionRequest input) {
+
+        String userId = getUserId(input)
+
+        TimesheetEntry entry = stopActiveTask(userId)
+
+        if (entry) {
+            return answerWithSuggestions("Stop recording on $entry.task", userId, ["stats"])
+        } else {
+            return answer("Already was stopped")
+        }
+
+    }
+
+    TimesheetEntry startTask(String userId, String taskName) {
+
+        TimesheetEntry startedEntry = timesheetRepository.findByUserAndTask(userId, taskName)
 
         if (!startedEntry) {
-            startedEntry = new TimesheetEntry(user: session, task: taskName, accumulatedTime: 0L, startTime: 0L)
+            startedEntry = new TimesheetEntry(user: userId, task: taskName, accumulatedTime: 0L, startTime: 0L)
         }
 
         startedEntry.active = true
         startedEntry.startTime = DateTime.now().getMillis()
 
-        LOGGER.info("Entry $startedEntry")
         timesheetRepository.save(startedEntry)
 
-        return answer("Adding time under '$taskName'. Accumulated $startedEntry.accumulatedTime seconds so far.")
+        return startedEntry
 
     }
 
-    TimesheetEntry checkForActiveTask(ActionRequest actionRequest) {
+    TimesheetEntry stopActiveTask(String userId) {
+        TimesheetEntry activeTask = null
 
+        try {
+            activeTask = timesheetRepository.findByUserAndActive(userId, true)
+        } catch (IncorrectResultSizeDataAccessException e) {
+            timesheetRepository.findByUser(userId)
+                    .each {
+                it.active = false
+                timesheetRepository.save(it)
+            }
+        }
 
-        TimesheetEntry activeTask = timesheetRepository.findByActive(true)
         if (activeTask) {
             LOGGER.info("Found active task $activeTask")
 
             activeTask.active = false
             long timeElapsed = DateTime.now().getMillis() - activeTask.startTime
             timeElapsed /= 1000L
+
+            if (activeTask.accumulatedTime == null) {
+                activeTask.accumulatedTime = 0
+            }
             activeTask.accumulatedTime += timeElapsed
 
             timesheetRepository.save(activeTask)
@@ -90,16 +145,26 @@ class TimesheetService extends AnswerService {
         }
     }
 
-    JSONObject stop(ActionRequest input) {
-
-        TimesheetEntry entry = checkForActiveTask(input)
-
-        if ( entry ) {
-            return answer("Stop recording on $entry.task")
-        } else {
-            return answer("Already was stopped")
+    String stats(String userId) {
+        TimesheetEntry activeTask = stopActiveTask(userId)
+        if (activeTask) {
+            startTask(activeTask.user, activeTask.task)
         }
 
-    }
 
+        List<TimesheetEntry> entries = timesheetRepository.findByUser(userId)
+
+        LOGGER.info("Entry $entries")
+
+        String response = entries
+                .findAll { entry -> entry.task }
+                .sort { 0-it.accumulatedTime }
+                .collect { entry ->
+            def active = entry.active ? "*active*" : ""
+            "$entry.task - $entry.accumulatedTime seconds $active"
+        }
+        .join(',\n')
+
+        return response
+    }
 }

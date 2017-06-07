@@ -14,7 +14,7 @@ class DelayService extends AnswerService {
 
     private Logger LOGGER = LoggerFactory.getLogger(DelayService)
 
-    JSONObject process(def input) {
+    JSONObject process(ActionRequest input) {
 
         def fulfillment = input?.result?.fulfillment
 
@@ -43,7 +43,7 @@ class DelayService extends AnswerService {
             Thread.sleep(ms)
             response = answer("accepted $par")
         } else {
-            response = answer("can't delay for $par.amount $par.unit","what?")
+            response = answer("can't delay for $par.amount $par.unit")
         }
 
 

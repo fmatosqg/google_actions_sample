@@ -1,7 +1,13 @@
 package com.isobar.sample.action.server.controller.intent
 
+import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.isobar.sample.action.server.service.ActionRequest
 import com.isobar.sample.action.server.service.DelayService
 import com.isobar.sample.action.server.service.IntentService
+import com.isobar.sample.action.server.service.timesheet.TimesheetService
+import groovy.json.JsonSlurper
+import groovy.transform.CompileStatic
 import org.json.JSONObject
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -16,6 +22,7 @@ import org.springframework.web.bind.annotation.ResponseBody
  * Created by fabio.goncalves on 5/06/2017.
  */
 @Controller
+@CompileStatic
 class IntentController {
 
     final Logger LOGGER = LoggerFactory.getLogger(IntentController)
@@ -26,50 +33,60 @@ class IntentController {
     @Autowired
     IntentService intentService
 
+    @Autowired
+    TimesheetService timesheetService
+
     @RequestMapping(value = "test", method = RequestMethod.GET, produces = "application/json")
     @ResponseBody
     String helloGet() {
 
-        def param = [result: [action: 'test']]
-        return helloPost(param)
+        ActionRequest actionRequest = new ActionRequest(result: new ActionRequest.Result(action: 'test'))
+        return "test"
     }
 
     @RequestMapping(value = "intent", method = RequestMethod.POST, produces = "application/json")
     @ResponseBody
-    String helloPost(@RequestBody def body) {
+    String helloPost(@RequestBody String body) {
 
-        def action = body?.result?.action
-        String param = body?.result?.parameters?.any
+        ObjectMapper objectMapper= new ObjectMapper()
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-        LOGGER.info("post hit ${body}")
-        LOGGER.info("Score ${body?.result?.score} / incomplete ${body?.result?.actionIncomplete} / Fulfillment ${body?.result?.fulfillment}")
+        ActionRequest actionRequest = objectMapper.readValue(body, ActionRequest)
 
-        if (body) {
-            def source = body?.originalRequest?.source
-            source += "/" + body?.result?.source
-            LOGGER.info("Action $action |||| Source $source")
-        }
+
+        LOGGER.info("body ${body}")
+        LOGGER.info("Action ${actionRequest?.result?.action}  / Score ${actionRequest?.result?.score} / incomplete ${actionRequest?.result?.actionIncomplete} / Fulfillment ${actionRequest.result}")
+
 
         JSONObject result = null
-        switch (action) {
+
+        switch (actionRequest?.result?.action) {
             case 'animals':
-                result = intentService.intentAnimals(param)
+                result = intentService.intentAnimals(actionRequest.result.parameters)
                 break
             case 'hello':
-                result = intentService.intentHello(param)
+                result = intentService.intentHello(actionRequest.result.parameters)
                 break
             case 'test':
                 result = intentService.test('test')
                 break
             case 'delay':
-                return delayService.process(body)
+                return delayService.process(actionRequest)
+                break
+            case 'timesheet.stats':
+                result = timesheetService.stats(actionRequest)
+                break
+            case 'timesheet.start':
+                result = timesheetService.start(actionRequest)
+                break
+            case 'timesheet.stop':
+                result = timesheetService.stop(actionRequest)
                 break
         }
 
         return result as String
 
     }
-
 
 
 }
